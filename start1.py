@@ -1,8 +1,9 @@
-import os
-import timeit
-import re
+import os #for system commands
+import timeit #for function testing
+import re #regex split commands
 
 def write_next_file(contents, file):
+    # open and write file to cwd
     fh = open(file,"w")
     fh.write(contents)
 
@@ -62,9 +63,7 @@ def rewrite(contents, line, where, what, one_indent, functions=None):
     remove = False
     add_lines = False
     for index,x in enumerate(contents):
-        if add_lines:
-            new_contents.append(x)
-        elif line in x:
+        if line in x and not add_lines:
             indents = ""
             for z,y in enumerate(x):
                 if not y.isspace():
@@ -81,7 +80,6 @@ def rewrite(contents, line, where, what, one_indent, functions=None):
             if where == "prepend":
                 new_contents.append(x)
                 new_contents.append(what)
-                add_lines = True
             elif where == "append":
                 searching = True
                 new_contents.append(x)
@@ -92,8 +90,9 @@ def rewrite(contents, line, where, what, one_indent, functions=None):
                 remove = True
                 searching = True
                 # find function or conditional contents, replace all with "what"
+            add_lines = True
         elif searching:
-            if removalUntil:
+            if removeUntil:
                 if index < removeUntil + 1:
                     if not remove:
                         new_contents.append(x)

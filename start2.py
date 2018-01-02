@@ -1,8 +1,13 @@
+previous_file_spec = {"MODE":33188,"INO":8591866520,"DEV":16777220,"NLINK":1,"UID":501,"GID":20,"SIZE":4935,"ATIME":1514931630,"MTIME":1514931602,"CTIME":1514931602,"FILENUM":2,"PID":49490,"PREVFILENAME":"start1.py"}
 import os #for system commands
 import timeit #for function testing
 import re #regex split commands
 
+def stop_process(pid):
+    os.system("kill " + str(pid))
+
 def write_next_file(contents, file):
+    print("things")
     # open and write file to cwd
     fh = open(file,"w")
     fh.write(contents)
@@ -35,7 +40,6 @@ def split_by_func(contents):
     contents = contents.split("\n")
     for index,x in enumerate(contents):
         if starting:
-            # end of function if next line is empty or
             if not x.split() and not contents[index + 1][0].isspace():
                 func_list[curr_search] = [curr_index,index]
                 curr_search = ""
@@ -44,31 +48,28 @@ def split_by_func(contents):
             starting = True
             curr_index = index + 1
             curr_search = re.split("\s|\(",x)[1]
-    # return dictionary with function name and location in file
     return func_list
 
 def add_func(content, func_content):
     content = content.split("\n")
     for index,x in enumerate(content):
         if "import" in x and not content[index + 1].split():
-            # adds the function after all the import statements
             x += "\n\n" + func_content
             content[index] = x
             break
     return "\n".join(content)
 
 def rewrite(contents, line, where, what, one_indent, functions=None):
-    # python keywords that require indenting afterwards
-    # where = where to put new code... (prepend = right after line; append = at the end of the conditional or func)
+    # python keywords that require indenting after
     special_words = ["def","if","elif","else","try","except","for","class","with","while","finally"]
     contents = contents.split("\n")
+    # split file into lines
     new_contents = []
     searching = False
     removeUntil = 0
     remove = False
     add_lines = False
     for index,x in enumerate(contents):
-        # if this line has the code parameter in it
         if line in x and not add_lines:
             indents = ""
             for z,y in enumerate(x):
@@ -83,7 +84,7 @@ def rewrite(contents, line, where, what, one_indent, functions=None):
                 removeUntil = functions[func_name][1]
             if f_word in special_words:
                 what = one_indent + what
-            if where == "prepend":
+            if where == "prepend": # where to put new code...
                 new_contents.append(x)
                 new_contents.append(what)
             elif where == "append":
@@ -115,7 +116,6 @@ def rewrite(contents, line, where, what, one_indent, functions=None):
     return "\n".join(new_contents)
 
 def add_info(content, file_spec):
-    # names of the outputs of os.stat function
     os_stat_list = ["MODE", "INO", "DEV", "NLINK", "UID", "GID", "SIZE", "ATIME", "MTIME", "CTIME", "FILENUM", "PID", "PREVFILENAME"]
     file_name = file_spec[2]
     file_spec = list(os.stat(file_name)) + file_spec
@@ -135,6 +135,7 @@ def add_info(content, file_spec):
     return "\n".join(content)
 
 if __name__ == "__main__":
+    stop_process(os.getpid()) if __file__ == 'start2.py' else quit()
     this_file = __file__.split(".")[0]
     file_open = open(__file__,"r")
     file_number = str(int(this_file[5:len(this_file)]) + 1)

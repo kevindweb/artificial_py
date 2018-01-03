@@ -11,6 +11,7 @@ Project contributors wanted to learn about small versions of artificial intellig
 
 ## Installation
 
-Download the start1.py  
-Command Line: `python start1.py`  
+Download the repository or file (start1.py)  
+[Download python (version >= 3.0)](https://www.python.org/downloads "Python Downloads")  
+Command Line Interface: `python start1.py`    
 Watch it run

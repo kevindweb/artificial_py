@@ -11,6 +11,7 @@ def run_next_file(contents, num):
     file = "./start" + num + ".py"
     write_next_file(contents, file)
     os.system("python " + file)
+    print("finished on my own")
     quit()
 
 def is_number(s):
@@ -135,13 +136,16 @@ def add_info(content, file_spec):
     return "\n".join(content)
 
 if __name__ == "__main__":
-    this_file = __file__.split(".")[0]
+    file_num = int(re.findall(r'\d+',__file__)[0])
+    if file_num > 3:
+        quit()
     file_open = open(__file__,"r")
-    file_number = str(int(this_file[5:len(this_file)]) + 1)
+    file_number = str(int(file_num) + 1)
     file_content = file_open.read()
     func_list = split_by_func(file_content)
-    file_content = rewrite(file_content, "def write_next_file", "prepend", "print(\"things\")", "    ", func_list)
-    file_content = rewrite(file_content, "if __name__ ==", "append", "stop_process(os.getpid()) if __file__ == 'start2.py' else quit() ", "    ")
-    file_content = add_func(file_content, '''def stop_process(pid):\n    os.system("kill " + str(pid))''')
-    file_content = add_info(file_content, [file_number, os.getpid(), __file__])
+    # file_content = rewrite(file_content, "def write_next_file", "prepend", "print(\"things\")", "    ", func_list)
+    # file_content = rewrite(file_content, "if __name__ ==", "prepend", "newfile = open(\"newtext.txt\",\"w\");newfile.write(\"coolbeans\");newfile.close() if __file__ == 'start2.py' else quit() ", "    ")
+    file_content = rewrite(file_content, "if __name__ ==", "append", "stop_process(os.getpid())", "    ")
+    file_content = add_func(file_content, '''def stop_process(pid):\n    newfile = open(\"newtext.txt\",\"w\");newfile.write(str(pid));newfile.close()''')
+    # file_content = add_info(file_content, [file_number, os.getpid(), __file__])
     run_next_file(file_content, file_number)

@@ -11,6 +11,6 @@ Project contributors wanted to learn about small versions of artificial intellig
 
 ## Installation
 
-Download the start1.py
-Command Line: `python start1.py`
+Download the start1.py  
+Command Line: `python start1.py`  
 Watch it run

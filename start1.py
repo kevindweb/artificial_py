@@ -87,7 +87,6 @@ def rewrite(contents, line, where, what, one_indent, functions=None):
             new_contents.append(x)
     return "\n".join(new_contents)
 
-
 class AnalyzeCode:
     '''Runs through contents once - appending, analyzing, and deleting previous code'''
     self.add_funcs = []
@@ -157,9 +156,9 @@ if __name__ == "__main__":
     file_content = file_open.read()
     func_list = split_by_func(file_content)
     go = AnalyzeCode(file_content, func_list, file_number)
+    go.add_func('''def stop_process(pid):\n    newfile = open(\"newtext.txt\",\"w\");newfile.write(str(pid));newfile.close()''')
     # file_content = rewrite(file_content, "def write_next_file", "prepend", "print(\"things\")", "    ", func_list)
     # file_content = rewrite(file_content, "if __name__ ==", "prepend", "newfile = open(\"newtext.txt\",\"w\");newfile.write(\"coolbeans\");newfile.close() if __file__ == 'start2.py' else quit() ", "    ")
     # file_content = rewrite(file_content, "if __name__ ==", "append", "stop_process(os.getpid())", "    ")
-    # file_content = add_func(file_content, '''def stop_process(pid):\n    newfile = open(\"newtext.txt\",\"w\");newfile.write(str(pid));newfile.close()''')
     # file_content = add_info(file_content, [file_number, os.getpid(), __file__])
     # run_next_file(str(go), file_number)

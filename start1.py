@@ -4,6 +4,9 @@ import os
 import timeit
 #regex split commands
 import re
+# next two are for website crawling and processing
+import bs4 as bs
+import requests as req
 
 def run_next_file(contents, num):
     file = "./start" + str(num) + ".py"
@@ -34,10 +37,33 @@ def split_by_func(contents):
     # return dictionary with function name and location in file
     return func_list
 
-class AnalyzeCode:
+class Crawler
+    '''Crawler searches a few websites and relative links for code tags and checks if content is valid python'''
+    self.urls = []
+    def __init__(self, websites):
+        self.urls += ['http://' + i for i in websites]
+
+    def handle_links(self, url, link):
+        return ''.join([url,link]) if link.startswith('/') else link
+
+    def remove_tags(content):
+        cleanr = re.compile('<.*?>')
+        # watch out for escaped characters ie &lt;
+        cleantext = re.sub(cleanr, '', content)
+        return cleantext
+
+    def get_links(url):
+        soup = bs.BeautifulSoup(req.get(url).text, 'html.parser')
+        body = soup.body
+        links = [remove_tags(code) for code in body.find_all('code')]
+        #links = [handle_links(url,link) for link in links if "google" in link]
+        #links = [str(link.encode("ascii")) for link in links]
+        return links
+
+class AnalyzeCode: #!!!!!!!! continue updating the run function
     '''Runs through contents once - appending, analyzing, and deleting previous code'''
     self.one_indent = "    "
-    self.rewrite = []
+    self.updates = []
     self.add_funcs = []
     self.special_words = ["def","if","elif","else","try","except","for","class","with","while","finally"]
     def __init__(self, c, f, num):
@@ -88,18 +114,20 @@ class AnalyzeCode:
         self.add_funcs.append(func_content)
 
     def rewrite(self, line, where, what):
-        self.rewrite.append([line, where, what])
+        self.updates.append([line, where, what])
+
+    # def resolve_issues(self):
+    #     for thing in self.updates:
 
     def run(self):
         if not classRun:
+
         # check if we've already called AnalyzeCode().run() before and stop if he have
             loop_content = self.contents.split("\n")
             placeholder = []
             for index,x in enumerate(loop_content):
                 placeholder.append(x)
                 # loop through everyline
-            # python keywords that require indenting afterwards
-            # where = where to put new code... (prepend = right after line; append = at the end of the conditional or func)
             searching = False
             remove = False
             add_lines = False
@@ -159,6 +187,17 @@ class AnalyzeCode:
         # simple return of the file_contents
         return self.contents
 
+# code for initializing AnalyzeCode class
+        # start = AnalyzeCode(file_content, func_list, file_number)
+        # start.add_func('''def stop_process(pid):\n    newfile = open(\"newtext.txt\",\"w\");newfile.write(str(pid));newfile.close()''')
+        # start.add_info([file_number - 1, os.getpid(), __file__])
+        # start.rewrite("def write_next_file", "prepend", "print(\"things\")")
+        # start.rewrite("if __name__ ==", "prepend", "newfile = open(\"newtext.txt\",\"w\");newfile.write(\"coolbeans\");newfile.close() if __file__ == 'start2.py' else quit()")
+        # start.rewrite("if __name__ ==", "append", "stop_process(os.getpid())")
+        # start.run()
+        # run_next_file(str(start), file_number)
+# end of that code
+
 
 if __name__ == "__main__":
     file_num = int(re.findall(r'\d+',__file__)[0])
@@ -169,11 +208,3 @@ if __name__ == "__main__":
     file_number = int(file_num) + 1
     file_content = file_open.read()
     func_list = split_by_func(file_content)
-    go = AnalyzeCode(file_content, func_list, file_number)
-    go.add_func('''def stop_process(pid):\n    newfile = open(\"newtext.txt\",\"w\");newfile.write(str(pid));newfile.close()''')
-    go.add_info([file_number - 1, os.getpid(), __file__])
-    go.rewrite("def write_next_file", "prepend", "print(\"things\")")
-    go.rewrite("if __name__ ==", "prepend", "newfile = open(\"newtext.txt\",\"w\");newfile.write(\"coolbeans\");newfile.close() if __file__ == 'start2.py' else quit()")
-    go.rewrite("if __name__ ==", "append", "stop_process(os.getpid())")
-    go.run()
-    # run_next_file(str(go), file_number)

@@ -154,37 +154,39 @@ class AnalyzeCode:
                             else:
                                 indents += y
                         # if this line has the code parameter in it
-                        updates_placeholder = self.updates
                         line_appended = False
+                        updates_placeholder = self.updates
+                        self.updates = []
                         for q,arr in enumerate(updates_placeholder):
+                            # print("arr:",arr[0],"line:",x)
                             if arr[0] in x:
                                 what = indents + arr[2]
+                                if f_word in self.special_words:
+                                    what = self.one_indent + what
                                 if (not line_appended):
                                     line_appended = True
-                                    print("array in line:",arr,"line:",x)
                                     placeholder.append(x)
+                                    if (not arr[1] == "prepend") and func_name in self.func_list:
+                                        remove = self.func_list[func_name]
+                                    if arr[1] == "prepend":
+                                        placeholder.append(what)
+                                    elif arr[1] == "append":
+                                        remove_line = False
+                                        add_this = what
+                                    elif arr[1] == "remove":
+                                        placeholder.append(what)
+                                        remove_line = True
                                 else:
-                                    print("array in line:",arr,"line:",x)
                                     if not arr[1] == "prepend":
                                         if arr[1] == "remove":
                                             placeholder.append(what)
                                         elif arr[1] == "append":
                                             add_this += "\n" + what
-                                        self.updates.remove(arr)
-                                        break
-                                if (not arr[1] == "prepend") and func_name in self.func_list:
-                                    remove = self.func_list[func_name]
-                                if f_word in self.special_words:
-                                    what = self.one_indent + what
-                                if arr[1] == "prepend":
-                                    placeholder.append(what)
-                                elif arr[1] == "append":
-                                    remove_line = False
-                                    add_this = what
-                                elif arr[1] == "remove":
-                                    placeholder.append(what)
-                                    remove_line = True
-                                self.updates.remove(arr)
+                                    else:
+                                        placeholder.append(what)
+                                #self.updates.remove(arr)
+                            else:
+                                self.updates.append(arr)
                         #end of inside for loop
                         placeholder.append(x) if not line_appended else None
                     else:
@@ -217,8 +219,8 @@ if __name__ == "__main__":
     start.add_info([file_number - 1, os.getpid(), __file__])
     #start.add_func('''def stop_process(pid):\n    newfile = open(\"newtext.txt\",\"w\");newfile.write(str(pid));newfile.close()''')
     start.rewrite("def run_next_file", "prepend", "print(\"things\")")
-    # start.rewrite("def run_next_file", "prepend", '''if "things" == "start":    print("not things")''')
+    start.rewrite("def run_next_file", "prepend", '''if "things" == "start":    print("not things")''')
     #start.rewrite("if __name__ ==", "prepend", "newfile = open(\"newtext.txt\",\"w\");newfile.write(\"coolbeans\");newfile.close() if __file__ == 'start2.py' else quit()")
     #start.rewrite("if __name__ ==", "append", "stop_process(os.getpid())")
     start.run()
-    #run_next_file(str(start), file_number)
+    run_next_file(str(start), file_number)

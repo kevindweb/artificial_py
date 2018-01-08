@@ -1,3 +1,4 @@
+previous_file_spec = {"MODE":33188,"INO":8592022090,"DEV":16777220,"NLINK":1,"UID":501,"GID":20,"SIZE":9685,"ATIME":1515441005,"MTIME":1515440989,"CTIME":1515440989,"FILENUM":1,"PID":66885,"PREVFILENAME":"start1.py"}
 #for system commands
 import os
 #for function testing
@@ -9,7 +10,9 @@ import bs4 as bs
 import requests as req
 
 def run_next_file(contents, num):
+    print("things")
     file = "./start" + str(num) + ".py"
+    if "things" == "start":    print("not things")
     # process replicates, increasing the file number
     fh = open(file,"w")
     fh.write(contents)
@@ -158,13 +161,13 @@ class AnalyzeCode:
                         line_appended = False
                         for q,arr in enumerate(updates_placeholder):
                             if arr[0] in x:
+                                if "def run_next_file" in x:
+                                    print("array in line:",arr)
                                 what = indents + arr[2]
-                                if (not line_appended):
+                                if not line_appended:
                                     line_appended = True
-                                    print("array in line:",arr,"line:",x)
                                     placeholder.append(x)
                                 else:
-                                    print("array in line:",arr,"line:",x)
                                     if not arr[1] == "prepend":
                                         if arr[1] == "remove":
                                             placeholder.append(what)
@@ -178,6 +181,7 @@ class AnalyzeCode:
                                     what = self.one_indent + what
                                 if arr[1] == "prepend":
                                     placeholder.append(what)
+                                    #print("line:",x)
                                 elif arr[1] == "append":
                                     remove_line = False
                                     add_this = what
@@ -206,7 +210,7 @@ class AnalyzeCode:
 
 if __name__ == "__main__":
     file_num = int(re.findall(r'\d+',__file__)[0])
-    # next conditional here for a catch, so the files do not stack up in **development**
+    # line 206 here for a catch, so the files do not stack up in **development**
     if file_num > 3:
         quit()
     file_open = open(__file__,"r")
@@ -217,8 +221,8 @@ if __name__ == "__main__":
     start.add_info([file_number - 1, os.getpid(), __file__])
     #start.add_func('''def stop_process(pid):\n    newfile = open(\"newtext.txt\",\"w\");newfile.write(str(pid));newfile.close()''')
     start.rewrite("def run_next_file", "prepend", "print(\"things\")")
-    # start.rewrite("def run_next_file", "prepend", '''if "things" == "start":    print("not things")''')
+    start.rewrite("file = \"./start\"", "prepend", '''if "things" == "start":    print("not things")''')
     #start.rewrite("if __name__ ==", "prepend", "newfile = open(\"newtext.txt\",\"w\");newfile.write(\"coolbeans\");newfile.close() if __file__ == 'start2.py' else quit()")
     #start.rewrite("if __name__ ==", "append", "stop_process(os.getpid())")
     start.run()
-    #run_next_file(str(start), file_number)
+    run_next_file(str(start), file_number)

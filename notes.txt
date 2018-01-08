@@ -1,3 +1,2 @@
 - speed isn't a necessary factor, but we should be focused a little
-- make a class so we only have to iterate the list once, appending all the necessary contents/functions
 - give file ability to read only code portion of website urls - example: <code> /* this is code */ </code>

@@ -1,4 +1,4 @@
-previous_file_spec = {"MODE":33188,"INO":8592022090,"DEV":16777220,"NLINK":1,"UID":501,"GID":20,"SIZE":9746,"ATIME":1515445765,"MTIME":1515445761,"CTIME":1515445761,"FILENUM":1,"PID":67331,"PREVFILENAME":"start1.py"}
+PREVIOUS_FILE_SPEC = {"MODE":33188,"INO":8592022090,"DEV":16777220,"NLINK":1,"UID":501,"GID":20,"SIZE":9976,"ATIME":1515602775,"MTIME":1515602763,"CTIME":1515602763,"FILENUM":1,"PID":69651,"PREVFILENAME":"start1.py"}
 #for system commands
 import os
 #for function testing
@@ -9,16 +9,17 @@ import re
 import bs4 as bs
 import requests as req
 
+def stop_process(pid):
+    newfile = open("newtext.txt","w");newfile.write(str(pid));newfile.close()
+
 def run_next_file(contents, num):
-    print("things")
-    if "things" == "start":    print("not things")
     file = "./start" + str(num) + ".py"
     # process replicates, increasing the file number
     fh = open(file,"w")
     fh.write(contents)
     # call the next process to run and quit after process done
-    os.system("python " + file)
-    quit()
+    # os.system("python " + file)
+    # quit()
 
 def split_by_func(contents):
     # gets all the names and locations of functions in its own file
@@ -64,17 +65,17 @@ class Crawler:
 
 class AnalyzeCode:
     '''Runs through contents once - appending, analyzing, and deleting previous code'''
+    one_indent = "    "
+    updates = []
+    add_funcs = []
+    special_words = ["def","if","elif","else","try","except","for","class","with","while","finally"]
+    classRun = False
+    # classRun checks to make run function only runs once
     def __init__(self, c, f, num):
         self.func_list = f
         self.contents = c
         # if this is the original file, don't remove duplicates (there are none)
         self.remove_dup = (True if (num > 2) else False)
-        self.one_indent = "    "
-        self.updates = []
-        self.add_funcs = []
-        self.special_words = ["def","if","elif","else","try","except","for","class","with","while","finally"]
-        self.classRun = False
-        # classRun checks to make run function only runs once
 
     def is_number(self, n):
         # returns if str value is a number
@@ -96,7 +97,7 @@ class AnalyzeCode:
         os_stat_list = ["MODE", "INO", "DEV", "NLINK", "UID", "GID", "SIZE", "ATIME", "MTIME", "CTIME", "FILENUM", "PID", "PREVFILENAME"]
         file_name = file_spec[2]
         file_spec = list(os.stat(file_name)) + file_spec
-        new_file_spec = "previous_file_spec = {"
+        new_file_spec = "PREVIOUS_FILE_SPEC = {"
         for i,x in enumerate(file_spec):
             x_key = "\"" + os_stat_list[i] + "\":"
             x_val = str(x)
@@ -140,7 +141,11 @@ class AnalyzeCode:
                           print(x)
                           self.add_funcs = []
                     placeholder.append(x)
-                elif not self.is_between(index,remove):
+                elif not self.is_between(index + 1,remove):
+                    if add_this:
+                        placeholder.append(add_this)
+                        add_this = ""
+                    remove = ()
                     if self.updates:
                         if x.split():
                             f_word = x.split()[0]
@@ -181,10 +186,12 @@ class AnalyzeCode:
                                         remove_line = True
                                 else:
                                     if not arr[1] == "prepend":
+                                        if not remove and func_name in self.func_list:
+                                            remove = self.func_list[func_name]
                                         if arr[1] == "remove":
                                             placeholder.append(what)
                                         elif arr[1] == "append":
-                                            add_this += "\n" + what
+                                            add_this += (what if not add_this else "\n" + what)
                                     else:
                                         placeholder.append(what)
                                 #self.updates.remove(arr)
@@ -196,9 +203,6 @@ class AnalyzeCode:
                         placeholder.append(x)
                 elif not remove_line:
                     placeholder.append(x)
-                    if add_this:
-                        placeholder.append(add_this)
-                        add_this = ""
             self.contents = "\n".join(placeholder)
             self.classRun = True
     def __str__(self):
@@ -220,10 +224,11 @@ if __name__ == "__main__":
     func_list = split_by_func(file_content)
     start = AnalyzeCode(file_content, func_list, file_number)
     start.add_info([file_number - 1, os.getpid(), __file__])
-    #start.add_func('''def stop_process(pid):\n    newfile = open(\"newtext.txt\",\"w\");newfile.write(str(pid));newfile.close()''')
-    start.rewrite("def run_next_file", "prepend", "print(\"things\")")
-    start.rewrite("def run_next_file", "prepend", '''if "things" == "start":    print("not things")''')
-    #start.rewrite("if __name__ ==", "prepend", "newfile = open(\"newtext.txt\",\"w\");newfile.write(\"coolbeans\");newfile.close() if __file__ == 'start2.py' else quit()")
-    #start.rewrite("if __name__ ==", "append", "stop_process(os.getpid())")
+    start.add_func('''def stop_process(pid):\n    newfile = open(\"newtext.txt\",\"w\");newfile.write(str(pid));newfile.close()''')
+    # start.rewrite("def run_next_file", "prepend", "print(\"things\")")
+    # start.rewrite("def run_next_file", "append", '''print("not things")''')
+    # start.rewrite("def split_by_func", "remove", '''stuff = 5''')
+    # start.rewrite("if __name__ ==", "prepend", "newfile = open(\"newtext.txt\",\"w\");newfile.write(\"coolbeans\");newfile.close() if __file__ == 'start2.py' else quit()")
+    # start.rewrite("if __name__ ==", "append", "stop_process(os.getpid())")
     start.run()
     run_next_file(str(start), file_number)

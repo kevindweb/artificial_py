@@ -1,9 +1,13 @@
 #for system commands
 import os
-#for function testing
-import timeit
 #regex split commands
 import re
+#random sleep cycles
+import random
+# for asynchronous calls
+import asyncio
+# for dumping information
+import json
 # next two are for website crawling and processing
 import bs4 as bs
 import requests as req
@@ -11,7 +15,7 @@ import requests as req
 def run_next_file(contents, num):
     file = "./start" + str(num) + ".py"
     # process replicates, increasing the file number
-    fh = open(file,"w")
+    fh = open(file, type)
     fh.write(contents)
     # call the next process to run and quit after process done
     # os.system("python " + file)
@@ -36,28 +40,6 @@ def split_by_func(contents):
             curr_search = re.split("\s|\(",x)[1]
     # return dictionary with function name and location in file
     return func_list
-
-class Crawler:
-    '''Crawler searches a few websites and relative links for code tags and checks if content is valid python'''
-    def __init__(self, websites):
-        self.urls = ['http://' + i for i in websites]
-
-    def handle_links(self, url, link):
-        return ''.join([url,link]) if link.startswith('/') else link
-
-    def remove_tags(self, content):
-        cleanr = re.compile('<.*?>')
-        # watch out for escaped characters ie &lt;
-        cleantext = re.sub(cleanr, '', content)
-        return cleantext
-
-    def get_links(self, url):
-        soup = bs.BeautifulSoup(req.get(url).text, 'html.parser')
-        body = soup.body
-        links = [remove_tags(code) for code in body.find_all('code')]
-        #links = [handle_links(url,link) for link in links if "google" in link]
-        #links = [str(link.encode("ascii")) for link in links]
-        return links
 
 class AnalyzeCode:
     '''Runs through contents once - appending, analyzing, and deleting previous code'''
@@ -205,8 +187,106 @@ class AnalyzeCode:
         return self.contents
 
 # code for initializing AnalyzeCode class
-
+    # analyze = AnalyzeCode(file_content, func_list, file_number)
+    # analyze.add_info([file_number - 1, os.getpid(), __file__])
+    # analyze.add_func('''def stop_process(pid):\n    newfile = open(\"newtext.txt\",\"w\");newfile.write(str(pid));newfile.close()''')
+    # analyze.rewrite("def run_next_file", "prepend", "print(\"things\")")
+    # analyze.rewrite("def run_next_file", "append", '''print("not things")''')
+    # analyze.rewrite("def split_by_func", "remove", '''stuff = 5''')
+    # analyze.rewrite("if __name__ ==", "prepend", "newfile = open(\"newtext.txt\",\"w\");newfile.write(\"coolbeans\");newfile.close() if __file__ == 'analyze2.py' else quit()")
+    # analyze.rewrite("if __name__ ==", "append", "stop_process(os.getpid())")
+    # analyze.run()
+    # run_next_file(str(analyze), file_number)
 # end of that code
+
+
+class TaskManager:
+    '''Given multiple functions, it uses asyncio to free up complete processes and stop with callback'''
+    # count variable catches running more than once
+    count = 0
+    done = 0
+    funcs = []
+    future = asyncio.Future()
+    loop = asyncio.get_event_loop()
+    # client = aiohttp.ClientSession(loop=loop)
+
+    def add_func(self, func, args):
+        self.funcs.append((func, args))
+
+    def callback(self, future):
+        print("stopping loop")
+        self.loop.stop()
+
+    def set_result(self):
+        self.done += 1
+        if self.done == len(self.funcs):
+            self.future.set_result("Done with asynchronous functions")
+
+    def run_once(self):
+        if self.count:
+            print("Run more than once, stopping...")
+            return
+        # signal.signal(signal.SIGINT, self.signal_handler)
+        self.count += 1
+        print("Starting asyncio")
+        self.future.add_done_callback(self.callback)
+        for func,arg in self.funcs:
+            asyncio.ensure_future(func(arg, self.set_result))
+        try:
+            self.loop.run_forever()
+        finally:
+            self.loop.close()
+
+class Crawler:
+    '''Crawler searches a websites, finds relative links, and code tags to check if content is valid python'''
+
+    log_file = "./out.txt"
+
+    def __init__(self, websites, num):
+        self.initials = [i.split(".")[0] for i in websites]
+        self.urls = ['http://' + i for i in websites]
+        self.file_num = num
+
+    def handle_links(self, url, link):
+        return ''.join([url,link]) if link.startswith('/') else link
+
+    def remove_tags(self, content):
+        cleanr = re.compile('<.*?>')
+        # watch out for escaped characters ie &lt;
+        cleantext = re.sub(cleanr, '', content)
+        return cleantext
+
+    def get_links(self):
+        url = self.urls[0]
+        soup = bs.BeautifulSoup(req.get(self.urls[0]).text, 'html.parser')
+        links = [i.get('href') for i in soup.body.find_all('a')]
+        # links list gets handled only if link stems from original website
+        # links = [str(self.handle_links(url,link).encode("ascii")) for link in links if [i for i in self.initials if i in link]]
+        # links = list(set([self.handle_links(url,link) for link in links if (link and (self.initials[0] in link or not "." in link))]))
+        manage = TaskManager()
+        # manage.add_func(self.log, args="Information")
+        manage.add_func(self.log, args=links)
+        manage.run_once()
+
+    async def log(self, info, done):
+        if type(info) == type([]):
+            out_file = "./json_dump" + str(self.file_num) + ".json"
+            print("Dumping Contents into " + out_file)
+            data = {'links' : info}
+            await asyncio.sleep(random.uniform(0.3, 0.9))
+            # with open(out_file, 'w') as outfile:
+            #     json.dump(data, outfile)
+            print("JSON dumped")
+        else:
+            info = "\nfile_dump " + str(self.file_num) + "\n\n" + info
+            for i in range(20):
+                if i > 10:
+                    await asyncio.sleep(0)
+                print("num",i)
+            # with open(self.log_file, 'a') as outfile:
+            #     outfile.write(info)
+            print("Information logged")
+        done()
 
 if __name__ == "__main__":
     file_num = int(re.findall(r'\d+',__file__)[0])
@@ -217,13 +297,5 @@ if __name__ == "__main__":
     file_number = int(file_num) + 1
     file_content = file_open.read()
     func_list = split_by_func(file_content)
-    start = AnalyzeCode(file_content, func_list, file_number)
-    start.add_info([file_number - 1, os.getpid(), __file__])
-    start.add_func('''def stop_process(pid):\n    newfile = open(\"newtext.txt\",\"w\");newfile.write(str(pid));newfile.close()''')
-    # start.rewrite("def run_next_file", "prepend", "print(\"things\")")
-    # start.rewrite("def run_next_file", "append", '''print("not things")''')
-    # start.rewrite("def split_by_func", "remove", '''stuff = 5''')
-    # start.rewrite("if __name__ ==", "prepend", "newfile = open(\"newtext.txt\",\"w\");newfile.write(\"coolbeans\");newfile.close() if __file__ == 'start2.py' else quit()")
-    # start.rewrite("if __name__ ==", "append", "stop_process(os.getpid())")
-    start.run()
-    run_next_file(str(start), file_number)
+    crawl = Crawler(["stackoverflow.com"], file_num)
+    crawl.get_links()

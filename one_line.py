@@ -1,0 +1,1 @@
+import bs4 as bs,requests as req;ip = "http://"+input("Type a legitimate website ex. (stackoverflow.com): ");print(list(set([''.join([ip, link]) if link.startswith('/') else link for link in [i.get('href') for i in bs.BeautifulSoup(req.get(ip).text, 'html.parser').body.find_all('a')] if (link and (ip.split(".")[0] in link or not "." in link))])))

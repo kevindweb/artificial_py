@@ -1,2 +1,9 @@
 - speed isn't a necessary factor, but we should be focused a little
 - give file ability to read only code portion of website urls - example: <code> /* this is code */ </code>
+- !!!!!!!add callback argument for every "async" function defined!!!!!!!
+- remove comments, compress, and compile start1.py in testing
+
+- Class list:
+    - AnalyzeCode
+    - TaskManager
+    - Crawler

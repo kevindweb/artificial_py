@@ -1,8 +1,8 @@
-#for system commands
+# for system commands
 import os
-#regex split commands
+# regex split commands
 import re
-#random sleep cycles
+# random sleep cycles
 import random
 # for asynchronous calls
 import asyncio
@@ -11,6 +11,7 @@ import json
 # next two are for website crawling and processing
 import bs4 as bs
 import requests as req
+
 
 def run_next_file(contents, num):
     file = "./start" + str(num) + ".py"
@@ -21,34 +22,38 @@ def run_next_file(contents, num):
     # os.system("python " + file)
     # quit()
 
+
 def split_by_func(contents):
     # gets all the names and locations of functions in its own file
     func_list = {}
     starting = False
     curr_search = ""
     curr_index = 0
-    for index,x in enumerate(contents.split("\n")):
+    for index, x in enumerate(contents.split("\n")):
         if starting:
             # end of function if this line is empty and last line
             if not x.split() and not contents[index + 1][0].isspace():
-                func_list[curr_search] = (curr_index,index)
+                func_list[curr_search] = (curr_index, index)
                 curr_search = ""
                 starting = False
         elif x[0:3] == "def":
             starting = True
             curr_index = index + 1
-            curr_search = re.split("\s|\(",x)[1]
+            curr_search = re.split("\s|\(", x)[1]
     # return dictionary with function name and location in file
     return func_list
+
 
 class AnalyzeCode:
     '''Runs through contents once - appending, analyzing, and deleting previous code'''
     one_indent = "    "
     updates = []
     add_funcs = []
-    special_words = ["def","if","elif","else","try","except","for","class","with","while","finally"]
+    special_words = ["def", "if", "elif", "else", "try",
+                     "except", "for", "class", "with", "while", "finally"]
     classRun = False
     # classRun checks to make run function only runs once
+
     def __init__(self, c, f, num):
         self.func_list = f
         self.contents = c
@@ -72,11 +77,12 @@ class AnalyzeCode:
 
     def add_info(self, file_spec):
         # add information about previous file - learning about size, location, runtime...
-        os_stat_list = ["MODE", "INO", "DEV", "NLINK", "UID", "GID", "SIZE", "ATIME", "MTIME", "CTIME", "FILENUM", "PID", "PREVFILENAME"]
+        os_stat_list = ["MODE", "INO", "DEV", "NLINK", "UID", "GID", "SIZE",
+                        "ATIME", "MTIME", "CTIME", "FILENUM", "PID", "PREVFILENAME"]
         file_name = file_spec[2]
         file_spec = list(os.stat(file_name)) + file_spec
         new_file_spec = "PREVIOUS_FILE_SPEC = {"
-        for i,x in enumerate(file_spec):
+        for i, x in enumerate(file_spec):
             x_key = "\"" + os_stat_list[i] + "\":"
             x_val = str(x)
             if self.is_number(x):
@@ -103,7 +109,7 @@ class AnalyzeCode:
     def is_between(self, num1, arr):
         return (bool(arr) and num1 >= arr[0] and num1 <= arr[1])
 
-    def run(self):
+    async def run(self, done):
         # check if we've already called AnalyzeCode().run() before and stop if he have
         if not self.classRun:
             loop_content = self.contents.split("\n")
@@ -111,14 +117,15 @@ class AnalyzeCode:
             remove = ()
             remove_line = False
             add_this = ""
-            for index,x in enumerate(loop_content):
+            for index, x in enumerate(loop_content):
+                await asyncio.sleep(0)
                 if self.add_funcs:
                     if "import" in x and not loop_content[index + 1].split():
-                          # adds the new functions after all the import statements
-                          x += "\n\n" + "\n".join(self.add_funcs)
-                          self.add_funcs = []
+                        # adds the new functions after all the import statements
+                        x += "\n\n" + "\n".join(self.add_funcs)
+                        self.add_funcs = []
                     placeholder.append(x)
-                elif not self.is_between(index + 1,remove):
+                elif not self.is_between(index + 1, remove):
                     if add_this:
                         placeholder.append(add_this)
                         add_this = ""
@@ -127,13 +134,13 @@ class AnalyzeCode:
                         if x.split():
                             f_word = x.split()[0]
                             # f_word is the first word in a line - example: else, if, for...
-                            func_name = re.split("\s|\(",x)[1]
+                            func_name = re.split("\s|\(", x)[1]
                             # func_name splits a line like "def function_name(things):" into "function_name"
                         else:
                             f_word = ""
                             func_name = ""
                         indents = ""
-                        for z,y in enumerate(x):
+                        for z, y in enumerate(x):
                             if not y.isspace():
                                 break
                             else:
@@ -142,8 +149,7 @@ class AnalyzeCode:
                         line_appended = False
                         updates_placeholder = self.updates
                         self.updates = []
-                        for q,arr in enumerate(updates_placeholder):
-                            # print("arr:",arr[0],"line:",x)
+                        for q, arr in enumerate(updates_placeholder):
                             if arr[0] in x:
                                 what = indents + arr[2]
                                 if f_word in self.special_words:
@@ -171,10 +177,10 @@ class AnalyzeCode:
                                             add_this += (what if not add_this else "\n" + what)
                                     else:
                                         placeholder.append(what)
-                                #self.updates.remove(arr)
+                                # self.updates.remove(arr)
                             else:
                                 self.updates.append(arr)
-                        #end of inside for loop
+                        # end of inside for loop
                         placeholder.append(x) if not line_appended else None
                     else:
                         placeholder.append(x)
@@ -182,22 +188,12 @@ class AnalyzeCode:
                     placeholder.append(x)
             self.contents = "\n".join(placeholder)
             self.classRun = True
+            done()
+
+
     def __str__(self):
         # simple return of the file_contents
         return self.contents
-
-# code for initializing AnalyzeCode class
-    # analyze = AnalyzeCode(file_content, func_list, file_number)
-    # analyze.add_info([file_number - 1, os.getpid(), __file__])
-    # analyze.add_func('''def stop_process(pid):\n    newfile = open(\"newtext.txt\",\"w\");newfile.write(str(pid));newfile.close()''')
-    # analyze.rewrite("def run_next_file", "prepend", "print(\"things\")")
-    # analyze.rewrite("def run_next_file", "append", '''print("not things")''')
-    # analyze.rewrite("def split_by_func", "remove", '''stuff = 5''')
-    # analyze.rewrite("if __name__ ==", "prepend", "newfile = open(\"newtext.txt\",\"w\");newfile.write(\"coolbeans\");newfile.close() if __file__ == 'analyze2.py' else quit()")
-    # analyze.rewrite("if __name__ ==", "append", "stop_process(os.getpid())")
-    # analyze.run()
-    # run_next_file(str(analyze), file_number)
-# end of that code
 
 
 class TaskManager:
@@ -208,7 +204,6 @@ class TaskManager:
     funcs = []
     future = asyncio.Future()
     loop = asyncio.get_event_loop()
-    # client = aiohttp.ClientSession(loop=loop)
 
     def add_func(self, func, args):
         self.funcs.append((func, args))
@@ -226,21 +221,25 @@ class TaskManager:
         if self.count:
             print("Run more than once, stopping...")
             return
+        elif not self.funcs:
+            print("Need to add functions to manage")
+            return
         # signal.signal(signal.SIGINT, self.signal_handler)
         self.count += 1
         print("Starting asyncio")
         self.future.add_done_callback(self.callback)
-        for func,arg in self.funcs:
+        for func, arg in self.funcs:
             asyncio.ensure_future(func(arg, self.set_result))
         try:
             self.loop.run_forever()
         finally:
             self.loop.close()
 
+
 class Crawler:
     '''Crawler searches a websites, finds relative links, and code tags to check if content is valid python'''
 
-    log_file = "./out.txt"
+    log_file = "./out.log"
 
     def __init__(self, websites, num):
         self.initials = [i.split(".")[0] for i in websites]
@@ -248,7 +247,7 @@ class Crawler:
         self.file_num = num
 
     def handle_links(self, url, link):
-        return ''.join([url,link]) if link.startswith('/') else link
+        return ''.join([url, link]) if link.startswith('/') else link
 
     def remove_tags(self, content):
         cleanr = re.compile('<.*?>')
@@ -256,46 +255,56 @@ class Crawler:
         cleantext = re.sub(cleanr, '', content)
         return cleantext
 
-    def get_links(self):
+    async def get_links(self, done):
         url = self.urls[0]
+        links = ["only in dev"]
         soup = bs.BeautifulSoup(req.get(self.urls[0]).text, 'html.parser')
+        await asyncio.sleep(0)
         links = [i.get('href') for i in soup.body.find_all('a')]
         # links list gets handled only if link stems from original website
-        # links = [str(self.handle_links(url,link).encode("ascii")) for link in links if [i for i in self.initials if i in link]]
-        # links = list(set([self.handle_links(url,link) for link in links if (link and (self.initials[0] in link or not "." in link))]))
-        manage = TaskManager()
-        # manage.add_func(self.log, args="Information")
-        manage.add_func(self.log, args=links)
-        manage.run_once()
+        links = list(set([self.handle_links(url,link) for link in links if (link and (self.initials[0] in link or not "." in link))]))
+        await asyncio.sleep(random.uniform(0.1, 0.9))
+        self.log(links)
+        done()
 
-    async def log(self, info, done):
+    def log(self, info):
         if type(info) == type([]):
             out_file = "./json_dump" + str(self.file_num) + ".json"
             print("Dumping Contents into " + out_file)
-            data = {'links' : info}
-            await asyncio.sleep(random.uniform(0.3, 0.9))
-            # with open(out_file, 'w') as outfile:
-            #     json.dump(data, outfile)
+            data = {'links': info}
+            with open(out_file, 'w') as outfile:
+                json.dump(data, outfile)
             print("JSON dumped")
         else:
             info = "\nfile_dump " + str(self.file_num) + "\n\n" + info
-            for i in range(20):
-                if i > 10:
-                    await asyncio.sleep(0)
-                print("num",i)
-            # with open(self.log_file, 'a') as outfile:
-            #     outfile.write(info)
+            with open(self.log_file, 'a') as outfile:
+                outfile.write(info)
             print("Information logged")
-        done()
+        # works as callback, for TaskManager
 
 if __name__ == "__main__":
-    file_num = int(re.findall(r'\d+',__file__)[0])
+    file_num = int(re.findall(r'\d+', __file__)[0])
     # next conditional here for a catch, so the files do not stack up in **development**
     if file_num > 3:
         quit()
-    file_open = open(__file__,"r")
+    file_open = open(__file__, "r")
     file_number = int(file_num) + 1
     file_content = file_open.read()
     func_list = split_by_func(file_content)
+    # code for initializing AnalyzeCode class
+        # analyze = AnalyzeCode(file_content, func_list, file_number)
+        # analyze.add_info([file_number - 1, os.getpid(), __file__])
+        # analyze.add_func('''def stop_process(pid):\n    newfile = open(\"newtext.txt\",\"w\");newfile.write(str(pid));newfile.close()''')
+        # analyze.rewrite("def run_next_file", "prepend", "print(\"things\")")
+        # analyze.rewrite("def run_next_file", "append", '''print("not things")''')
+        # analyze.rewrite("def split_by_func", "remove", '''stuff = 5''')
+        # analyze.rewrite("if __name__ ==", "prepend", "newfile = open(\"newtext.txt\",\"w\");newfile.write(\"coolbeans\");newfile.close() if __file__ == 'analyze2.py' else quit()")
+        # analyze.rewrite("if __name__ ==", "append", "stop_process(os.getpid())")
+    # end of that code
     crawl = Crawler(["stackoverflow.com"], file_num)
-    crawl.get_links()
+    manage = TaskManager()
+    # run crawler and analyecode main functions asynchronously - they require more processing time
+    # manage.add_func(crawl.get_links())
+    # manage.add_func(analyze.run())
+    manage.run_once()
+    # run_next_file(str(analyze), file_number)

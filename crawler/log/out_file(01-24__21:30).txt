@@ -1,2 +1,0 @@
-DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): stackoverflow.com
-DEBUG:urllib3.connectionpool:https://stackoverflow.com:443 "GET /questions/9257094/how-to-change-a-string-into-uppercase HTTP/1.1" 200 26520
